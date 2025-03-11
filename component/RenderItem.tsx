@@ -3,7 +3,15 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { FC } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Dimensions,
+} from "react-native";
+
+const { width } = Dimensions.get("window");
 
 export const RenderItem: FC<{
   item: any;
@@ -49,14 +57,7 @@ export const RenderItem: FC<{
               loadTrack(item);
             }
           }}
-          style={{
-            backgroundColor: "#E6D4FF",
-            padding: 8,
-            borderRadius: 5,
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+          style={styles.playButton}
         >
           <Ionicons
             name={currentTrack?.id === item.id && isPlaying ? "pause" : "play"}
@@ -77,6 +78,7 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
+    width: width - 20,
   },
   trackImage: { width: 50, height: 50, borderRadius: 5 },
   trackInfo: { flex: 1, marginLeft: 10 },
@@ -84,4 +86,14 @@ const styles = StyleSheet.create({
   trackArtist: { fontSize: 12, color: "#888" },
   trackActions: { flexDirection: "row", alignItems: "center" },
   trackDuration: { fontSize: 14, color: "#888", marginRight: 5 },
+  playButton: {
+    backgroundColor: "#E6D4FF",
+    padding: 8,
+    borderRadius: 5,
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });
+
+export default RenderItem;

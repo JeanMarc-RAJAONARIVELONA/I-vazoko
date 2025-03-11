@@ -5,6 +5,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Dimensions,
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
@@ -14,7 +15,10 @@ import { StatusBar } from "expo-status-bar";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { RenderItem } from "@/component/RenderItem";
+import AudioControl from "@/component/AudioControl";
 import AudioControlBar from "@/component/AudioControlBar";
+
+const { width, height } = Dimensions.get("window");
 
 const HomeScreen: React.FC = () => {
   const {
@@ -79,12 +83,14 @@ const HomeScreen: React.FC = () => {
     <View style={styles.container}>
       <View
         style={{
+          height: height * 0.22,
+          width: width * 0.93,
           display: "flex",
           flexDirection: "row",
           top: 5,
           backgroundColor: "#6B3FA0",
           borderRadius: 20,
-          padding: 15,
+          padding: height * 0.025,
           margin: 10,
           alignItems: "center",
           position: "relative",
@@ -111,25 +117,26 @@ const HomeScreen: React.FC = () => {
           <Text
             style={{
               fontSize: 12,
-              maxWidth: "80%",
+              maxWidth: width * 0.6,
               color: "#fff",
               textAlign: "left",
               marginBottom: 15,
             }}
           >
-            Discover new music player by JeanMarc. Listen to your favorites
-            anytime.
+            Discover new music player {"\n"}
+            Listen to your favorites anytime. {"\n"}
+            by JeanMarc RAJAONARIVELONA.
           </Text>
         </View>
         <Image
           source={require("../../assets/images/women-listen.png")}
           style={{
             flex: 1,
-            width: 200,
-            height: 160,
+            width: width * 0.7,
+            height: height * 0.25,
             position: "absolute",
-            top: -27,
-            right: -92,
+            top: -height * 0.031,
+            right: -width * 0.33,
           }}
           contentFit="cover"
         />
@@ -188,11 +195,21 @@ const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: {
+    height: height * 0.8,
+    flex: 1,
+    backgroundColor: "#fff",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    paddingTop: height * 0.03,
+    gap: height * 0.01,
+  },
   importContainer: {
+    width: width * 0.93,
     backgroundColor: "#f0ebfb80",
     borderRadius: 10,
-    padding: 4,
+    padding: 10,
     margin: 10,
     alignItems: "center",
     borderWidth: 3,
