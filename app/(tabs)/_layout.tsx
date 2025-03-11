@@ -1,5 +1,4 @@
-import { View, Text } from "react-native";
-import React from "react";
+import { View } from "react-native";
 import { Tabs } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 
@@ -10,19 +9,20 @@ export default function TabLayout() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: "#1a1a1a",
-            borderTopWidth: 0,
+            backgroundColor: "#fff",
+            borderTopWidth: 1,
+            borderTopColor: "#ccc",
           },
-          tabBarActiveTintColor: "#8c5cf6",
-          tabBarInactiveTintColor: "#666",
+          tabBarActiveTintColor: "#6B3FA0",
+          tabBarInactiveTintColor: "#888",
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
             title: "Home",
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="logo-chrome" size={size} color={color} />
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+              <Ionicons name="home" size={size} color={color} />
             ),
           }}
         />
@@ -30,7 +30,7 @@ export default function TabLayout() {
           name="search"
           options={{
             title: "Search",
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Ionicons name="search" size={size} color={color} />
             ),
           }}
@@ -39,7 +39,7 @@ export default function TabLayout() {
           name="library"
           options={{
             title: "Library",
-            tabBarIcon: ({ color, size }) => (
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Ionicons name="library" size={size} color={color} />
             ),
           }}
@@ -48,8 +48,8 @@ export default function TabLayout() {
           name="profile"
           options={{
             title: "Profile",
-            tabBarIcon: ({ color, size }) => (
-              <Ionicons name="person-circle" size={size} color={color} />
+            tabBarIcon: ({ color, size }: { color: string; size: number }) => (
+              <Ionicons name="person" size={size} color={color} />
             ),
           }}
         />
