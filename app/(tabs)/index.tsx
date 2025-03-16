@@ -294,6 +294,7 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     height: height * 0.8,
+    paddingBlock: 10,
     flex: 1,
     display: "flex",
     flexDirection: "column",
