@@ -1,8 +1,16 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+} from "react-native";
 import { Image } from "expo-image";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import Slider from "@react-native-community/slider";
+import { useTheme } from "@/context/ThemeContext";
+
+const { width } = Dimensions.get("window");
 
 interface AudioControlBarProps {
   currentTrack: any;
@@ -21,8 +29,15 @@ const AudioControlBar: React.FC<AudioControlBarProps> = ({
   nextTrack,
   goToPlayer,
 }) => {
+  const { theme } = useTheme();
+
   return (
-    <View style={styles.audioControl}>
+    <View
+      style={[
+        styles.audioControl,
+        { backgroundColor: theme.buttonBg, borderTopColor: theme.buttonBg },
+      ]}
+    >
       <TouchableOpacity style={styles.controlInfoWrapper} onPress={goToPlayer}>
         <Image
           source={require("../assets/images/audio-wave.gif")}
@@ -30,13 +45,15 @@ const AudioControlBar: React.FC<AudioControlBarProps> = ({
         />
         <View style={styles.controlInfo}>
           <Text
-            style={styles.controlTitle}
+            style={[styles.controlTitle, { color: theme.text }]}
             numberOfLines={1}
             ellipsizeMode="tail"
           >
             {currentTrack.title}
           </Text>
-          <Text style={styles.controlArtist}>{currentTrack.artist}</Text>
+          <Text style={[styles.controlArtist, { color: theme.textDim }]}>
+            {currentTrack.artist}
+          </Text>
         </View>
       </TouchableOpacity>
       <View style={styles.controlActions}>
@@ -65,15 +82,14 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     padding: 10,
-    backgroundColor: "#f9f9f9",
     borderTopWidth: 1,
-    borderTopColor: "#ccc",
+    width: width - 20,
   },
   controlInfoWrapper: { flexDirection: "row", flex: 1, alignItems: "center" },
   controlImage: { width: 30, height: 30, borderRadius: 5 },
   controlInfo: { flex: 1, marginLeft: 10 },
-  controlTitle: { fontSize: 16, color: "#333" },
-  controlArtist: { fontSize: 12, color: "#888" },
+  controlTitle: { fontSize: 16 },
+  controlArtist: { fontSize: 12 },
   controlActions: { flexDirection: "row", alignItems: "center" },
   controlButton: {
     backgroundColor: "#E6D4FF",
