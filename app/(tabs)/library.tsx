@@ -15,6 +15,7 @@ import { useAudioStore } from "@/store/audioStore";
 import { usePlaylistStore } from "@/store/playlistStore";
 import CreatePlaylist from "@/component/CreatePlaylist";
 import { Colors } from "@/constants/Colors";
+import { useTheme } from "@/context/ThemeContext";
 
 type LibrarySection = "playlists" | "titres" | "artistes" | "albums";
 
@@ -28,6 +29,7 @@ export default function Library() {
     recentlyPlayed,
     downloadedTracks,
   } = useAudioStore();
+  const { theme } = useTheme();
 
   const { playlists, loadPlaylists } = usePlaylistStore();
 
@@ -61,12 +63,12 @@ export default function Library() {
     onPress?: () => void;
   }) => (
     <TouchableOpacity
-      style={styles.quickAccessItem}
+      style={[styles.quickAccessItem, { backgroundColor: theme.tertyBg }]}
       onPress={onPress}
       activeOpacity={0.7}
     >
       <View style={styles.quickAccessIcon}>{icon}</View>
-      <Text style={styles.quickAccessTitle}>{title}</Text>
+      <Text style={[styles.quickAccessTitle]}>{title}</Text>
       <Text style={styles.quickAccessSubtitle}>
         {count !== undefined ? `${count} titres` : subtitle}
       </Text>
@@ -74,7 +76,12 @@ export default function Library() {
   );
 
   const renderPlaylistItem = (playlist: any) => (
-    <Link href={`/playlist/${playlist.id}`} asChild key={playlist.id}>
+    <Link
+      href={`/playlist/${playlist.id}`}
+      asChild
+      key={playlist.id}
+      style={{ backgroundColor: theme.buttonBg }}
+    >
       <TouchableOpacity style={styles.playlistItem} activeOpacity={0.7}>
         {playlist.artwork ? (
           <Image
@@ -92,32 +99,37 @@ export default function Library() {
           </View>
         )}
         <View style={styles.playlistInfo}>
-          <Text style={styles.playlistName} numberOfLines={1}>
+          <Text
+            style={[styles.playlistName, { color: theme.text }]}
+            numberOfLines={1}
+          >
             {playlist.name}
           </Text>
-          <Text style={styles.playlistCount}>
+          <Text style={[styles.playlistCount, { color: theme.secondary }]}>
             {playlist.tracks.length}{" "}
             {playlist.tracks.length === 1 ? "titre" : "titres"}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={24} color={Colors.light.icon} />
+        <Ionicons name="chevron-forward" size={24} color={theme.secondary} />
       </TouchableOpacity>
     </Link>
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={styles.header}>
-        <Text style={styles.title}>Votre Bibliothèque</Text>
+        <Text style={[styles.title, { color: theme.text }]}>
+          Votre Bibliothèque
+        </Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="search" size={24} color={Colors.light.text} />
+            <Ionicons name="search" size={24} color={theme.text} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconButton}>
             <Ionicons
               name="notifications-outline"
               size={24}
-              color={Colors.light.text}
+              color={theme.text}
             />
           </TouchableOpacity>
         </View>
@@ -127,7 +139,7 @@ export default function Library() {
         <View style={styles.quickAccess}>
           {renderQuickAccessItem({
             icon: <Ionicons name="heart" size={24} color={Colors.light.tint} />,
-            title: "Titres Aimés",
+            title: "Musiques Aimées",
             count: likedTracks.length,
           })}
           {renderQuickAccessItem({
@@ -136,11 +148,9 @@ export default function Library() {
             count: recentlyPlayed.length,
           })}
           {renderQuickAccessItem({
-            icon: (
-              <Ionicons name="download" size={24} color={Colors.light.tint} />
-            ),
-            title: "Téléchargés",
-            count: downloadedTracks.length,
+            icon: <Ionicons name="list" size={24} color={Colors.light.tint} />,
+            title: "Playlists",
+            count: playlists.length,
           })}
           {renderQuickAccessItem({
             icon: <Ionicons name="add" size={24} color={Colors.light.tint} />,
@@ -150,7 +160,7 @@ export default function Library() {
           })}
         </View>
 
-        <View style={styles.sections}>
+        <View style={[styles.sections, { backgroundColor: theme.background }]}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {["Playlists", "Titres", "Artistes", "Albums"].map((section) => (
               <TouchableOpacity
@@ -169,6 +179,7 @@ export default function Library() {
                     styles.sectionText,
                     activeSection === section.toLowerCase() &&
                       styles.sectionTextActive,
+                    { color: theme.tint },
                   ]}
                 >
                   {section}
@@ -180,7 +191,9 @@ export default function Library() {
 
         <View style={styles.playlistsContainer}>
           <View style={styles.playlistsHeader}>
-            <Text style={styles.sectionTitle}>Vos Playlists</Text>
+            <Text style={[styles.sectionTitle, { color: theme.text }]}>
+              Vos Playlists
+            </Text>
             <TouchableOpacity
               style={styles.addButton}
               onPress={() => setShowCreatePlaylist(true)}
@@ -216,10 +229,9 @@ export default function Library() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   playlistArtworkFallback: {
-    backgroundColor: Colors.light.secondaryBg,
+    backgroundColor: Colors.light.tertyBg,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -239,7 +251,6 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    color: Colors.light.text,
   },
   headerButtons: {
     flexDirection: "row",
@@ -259,7 +270,6 @@ const styles = StyleSheet.create({
   },
   quickAccessItem: {
     width: "45%",
-    backgroundColor: Colors.light.secondaryBg,
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
@@ -286,7 +296,6 @@ const styles = StyleSheet.create({
   sections: {
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.light.secondaryBg,
   },
   sectionTab: {
     paddingHorizontal: 16,
@@ -323,11 +332,11 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   playlistItem: {
+    width: "100%",
     flexDirection: "row",
     alignItems: "center",
     padding: 12,
     marginBottom: 12,
-    backgroundColor: Colors.light.secondaryBg,
     borderRadius: 8,
   },
   playlistArtwork: {

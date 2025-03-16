@@ -1,50 +1,63 @@
-# Welcome to your Expo app 👋
+# I-Vazoko - Lecteur de Musique Mobile 🎵
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Une application mobile de lecture de musique élégante construite avec Expo et React Native.
 
-## Get started
+## Fonctionnalités
 
-1. Install dependencies
+- 📚 Bibliothèque musicale complète
 
-   ```bash
-   npm install
-   ```
+  - Gestion des playlists
+  - Navigation par titres, artistes et albums
+  - Section "Titres Aimés"
+  - Historique d'écoute récente
 
-2. Start the app
+- 🎵 Contrôles de lecture avancés
 
-   ```bash
-    npx expo start
-   ```
+  - Lecture/Pause
+  - Navigation entre les pistes
+  - Gestion des files d'attente
 
-In the output, you'll find options to open the app in a
+- 📱 Interface utilisateur intuitive en français
+  - Navigation fluide avec expo-router
+  - Design moderne et réactif
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Installation
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+1. Cloner le projet
 
 ```bash
-npm run reset-project
+git clone [url-du-projet]
+cd i-vazoko
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. Installer les dépendances
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. Lancer l'application
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npx expo start
+```
 
-## Join the community
+## Structure du Projet
 
-Join our community of developers creating universal apps.
+- `/app` - Routes et navigation (expo-router)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+  - `/(tabs)` - Navigation principale
+  - `/playlist` - Gestion des playlists
+  - `/select-tracks` - Sélection de titres
+
+- `/component` - Composants réutilisables
+- `/store` - Gestion de l'état (audio, playlists)
+- `/services` - Services et logique métier
+- `/assets` - Ressources (audio, images, polices)
+
+## Technologies
+
+- [Expo](https://expo.dev)
+- [React Native](https://reactnative.dev)
+- [expo-router](https://docs.expo.dev/router/introduction)
+- [expo-av](https://docs.expo.dev/versions/latest/sdk/av/) pour la lecture audio

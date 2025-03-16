@@ -16,6 +16,7 @@ import { Track, useAudioStore } from "@/store/audioStore";
 import { useTheme } from "@/context/ThemeContext";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
+import { Colors } from "@/constants/Colors";
 
 const { width } = Dimensions.get("window");
 
@@ -149,15 +150,8 @@ export default function CreatePlaylist({
       style={[styles.container, { backgroundColor: theme.background }]}
     >
       <View style={[styles.header, { backgroundColor: theme.cardBg }]}>
-        <TouchableOpacity
-          style={styles.closeButton}
-          onPress={() => router.back()}
-          disabled={isLoading}
-        >
-          <Ionicons name="close" size={24} color={theme.text} />
-        </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.text }]}>
-          {mode === "add" ? "Ajouter des titres" : "Créer une Playlist"}
+          {mode === "add" ? "Ajouter des titres" : " "}
         </Text>
         <TouchableOpacity
           style={[
@@ -196,7 +190,7 @@ export default function CreatePlaylist({
                 styles.input,
                 {
                   color: theme.text,
-                  backgroundColor: theme.secondaryBg,
+                  backgroundColor: theme.tertyBg,
                   borderRadius: 12,
                   padding: 16,
                   fontSize: 16,
@@ -218,7 +212,7 @@ export default function CreatePlaylist({
           style={[
             styles.searchInput,
             {
-              backgroundColor: theme.secondaryBg,
+              backgroundColor: theme.tertyBg,
               color: theme.text,
               borderRadius: 12,
               padding: 16,
@@ -325,6 +319,9 @@ const baseStyles = StyleSheet.create({
   },
   createButton: {
     padding: 8,
+    backgroundColor: Colors.light.tertyBg,
+    paddingHorizontal: 16,
+    borderRadius: 12,
   },
   createButtonText: {
     fontSize: 16,

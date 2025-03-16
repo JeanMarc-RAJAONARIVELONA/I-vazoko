@@ -13,7 +13,6 @@ import { useAudioStore, type Track } from "../store/audioStore";
 import { Link, useRouter } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 
-// Styles statiques qui ne dépendent pas du thème
 const baseStyles = StyleSheet.create({
   actionButtons: {
     flexDirection: "row",

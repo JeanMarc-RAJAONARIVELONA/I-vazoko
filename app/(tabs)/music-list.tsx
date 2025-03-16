@@ -11,10 +11,10 @@ import {
   ScrollView,
 } from "react-native";
 import { useEffect, useState } from "react";
-import { Colors } from "@/constants/Colors";
 import { useAudioStore, Track } from "@/store/audioStore";
 import RenderItem from "@/component/RenderItem";
 import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "@/context/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -22,6 +22,7 @@ export default function MusicScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
+  const { theme } = useTheme();
 
   const {
     localTracks,
@@ -44,26 +45,20 @@ export default function MusicScreen() {
       track.artist.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddToPlaylist = (playlistId: string) => {
-    if (selectedTrack) {
-      addToPlaylist(playlistId, selectedTrack);
-      setShowPlaylistModal(false);
-      setSelectedTrack(null);
-    }
-  };
-
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Musique</Text>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="rgba(255, 255, 255, 0.7)" />
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.cardBg }]}>
+        <Text style={[styles.title, { color: theme.text }]}>Musique</Text>
+        <View
+          style={[styles.searchContainer, { backgroundColor: theme.tertyBg }]}
+        >
+          <Ionicons name="search" size={20} color={theme.secondary} />
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: theme.text }]}
             placeholder="Rechercher une musique..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="rgba(255, 255, 255, 0.5)"
+            placeholderTextColor={theme.secondary}
           />
         </View>
       </View>
@@ -88,7 +83,6 @@ export default function MusicScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* Modal pour ajouter à une playlist */}
       <Modal
         visible={showPlaylistModal}
         transparent
@@ -171,7 +165,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     height: 400,
-    backgroundColor: "#121212",
   },
   header: {
     paddingTop: 20,
@@ -188,7 +181,6 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
     padding: 12,
     borderRadius: 12,
   },
