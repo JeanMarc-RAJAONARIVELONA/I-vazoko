@@ -339,7 +339,7 @@ export default function PlaylistView({ playlistId }: { playlistId: string }) {
     try {
       const playlist = playlists.find((p) => p.id === playlistId);
       if (playlist) {
-        await deletePlaylist(playlist.id);
+        deletePlaylist(playlist.id);
         router.replace("/(tabs)/library");
       }
     } catch (error) {
@@ -435,13 +435,14 @@ export default function PlaylistView({ playlistId }: { playlistId: string }) {
         <TouchableOpacity
           style={[styles.button, styles.addButton]}
           onPress={() =>
-            router.push(`/create-playlist?mode=add&playlistId=${playlist.id}`)
+            router.push({
+              pathname: "/select-tracks/[id]",
+              params: { id: playlistId },
+            })
           }
         >
           <Ionicons name="add" size={24} color={theme.tint} />
-          <Text style={[styles.buttonText, styles.addButtonText]}>
-            Ajouter des song
-          </Text>
+          <Text style={styles.addButtonText}>Ajouter des titres</Text>
         </TouchableOpacity>
       </View>
 

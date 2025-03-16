@@ -1,44 +1,50 @@
 import { View } from "react-native";
 import { Tabs } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function TabLayout() {
+  const { theme } = useTheme();
+
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
       <Tabs
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: "#fff",
+            backgroundColor: theme.cardBg,
             borderTopWidth: 1,
-            borderTopColor: "#ccc",
+            borderTopColor: theme.border,
           },
-          tabBarActiveTintColor: "#6B3FA0",
-          tabBarInactiveTintColor: "#888",
+          tabBarActiveTintColor: theme.tint,
+          tabBarInactiveTintColor: theme.textDim,
+          tabBarLabelStyle: {
+            fontSize: 12,
+          },
         }}
       >
         <Tabs.Screen
           name="index"
           options={{
-            title: "Home",
+            title: "Accueil",
             tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Ionicons name="home" size={size} color={color} />
             ),
           }}
         />
         <Tabs.Screen
-          name="search"
+          name="music-list"
           options={{
-            title: "Search",
+            title: "Musique",
             tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-              <Ionicons name="search" size={size} color={color} />
+              <Ionicons name="musical-note" size={size} color={color} />
             ),
           }}
         />
         <Tabs.Screen
           name="library"
           options={{
-            title: "Library",
+            title: "Bibliothèque",
             tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Ionicons name="library" size={size} color={color} />
             ),
@@ -47,7 +53,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="profile"
           options={{
-            title: "Profile",
+            title: "Profil",
             tabBarIcon: ({ color, size }: { color: string; size: number }) => (
               <Ionicons name="person" size={size} color={color} />
             ),
