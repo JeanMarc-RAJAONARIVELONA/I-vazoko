@@ -3,7 +3,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { Audio } from "expo-av";
 import { useFrameworkReady } from "@/hooks/useFrameworkReady";
-import { SafeAreaView, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { usePlaylistStore } from "@/store/playlistStore";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -33,7 +33,6 @@ const MainLayout: React.FC = () => {
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <StatusBar style="inverted" />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
@@ -77,6 +76,7 @@ const RootLayout: React.FC = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <MainLayout />
+        <StatusBar style="auto" />
       </ThemeProvider>
     </GestureHandlerRootView>
   );
