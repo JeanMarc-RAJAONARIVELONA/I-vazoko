@@ -1,8 +1,12 @@
 import { create } from "zustand";
-import { Audio } from "expo-av";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import TrackPlayer, { 
+  Track as PlayerTrack,
+  RepeatMode,
+  State
+} from "react-native-track-player";
 
-export interface Track {
+export interface Track extends Omit<PlayerTrack, 'url'> {
   id: string;
   title: string;
   artist: string;
@@ -15,26 +19,23 @@ export interface Track {
 }
 
 export interface Playlist {
-  id: string;
+  id: string; 
   name: string;
   tracks: Track[];
   createdAt: string;
   artwork: string;
 }
+
 interface AudioState {
   currentTrack: Track | null;
-  isPlaying: boolean;
   currentPlaylist: Playlist | null;
   playlists: Playlist[];
   localTracks: Track[];
   likedTracks: Track[];
   recentlyPlayed: Track[];
   downloadedTracks: Track[];
-  sound: Audio.Sound | null;
-  progress: number;
-  duration: number;
   isShuffled: boolean;
-  repeatMode: "off" | "all" | "one";
+  repeatMode: RepeatMode;
   loadTrack: (track: Track) => Promise<void>;
   togglePlayback: () => Promise<void>;
   nextTrack: () => Promise<void>;
@@ -45,12 +46,8 @@ interface AudioState {
   addToPlaylist: (playlistId: string, track: Track) => void;
   removeFromPlaylist: (playlistId: string, trackId: string) => void;
   setCurrentPlaylist: (playlist: Playlist) => void;
-  toggleLike: (track: Track) => void;
-  downloadTrack: (track: Track) => void;
-  removeDownload: (trackId: string) => void;
-  setProgress: (progress: number) => void;
   seekTo: (position: number) => Promise<void>;
-  toggleShuffle: () => void;
+  toggleShuffle: () => Promise<void>;
   toggleRepeat: () => void;
   clearLocalTracks: () => void;
   loadLocalTracks: () => Promise<void>;
@@ -60,137 +57,98 @@ interface AudioState {
 }
 
 export const useAudioStore = create<AudioState>((set, get) => ({
-  // State initial
-
   currentTrack: null,
-  isPlaying: false,
   currentPlaylist: null,
   playlists: [],
   localTracks: [],
   likedTracks: [],
   recentlyPlayed: [],
   downloadedTracks: [],
-  sound: null,
-  progress: 0,
-  duration: 0,
   isShuffled: false,
-  repeatMode: "off",
+  repeatMode: RepeatMode.Off,
 
   loadTrack: async (track) => {
-    const { sound: currentSound } = get();
-
-    if (currentSound) {
-      await currentSound.unloadAsync();
-    }
-
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: track.url },
-      { shouldPlay: true, progressUpdateIntervalMillis: 1000 }
-    );
-
-    set({ currentTrack: track, sound, isPlaying: true });
-
-    sound.setOnPlaybackStatusUpdate((status) => {
-      if (status.isLoaded) {
-        set({
-          progress: status.positionMillis || 0,
-          duration: status.durationMillis || 0,
-          isPlaying: status.isPlaying || false,
-        });
-
-        if (status.didJustFinish) {
-          const state = get();
-          if (state.repeatMode === "one") {
-            sound.replayAsync();
-          } else {
-            state.nextTrack();
-          }
-        }
-      }
-    });
+    await TrackPlayer.reset();
+    await TrackPlayer.add(track);
+    await TrackPlayer.play();
+    set({ currentTrack: track });
   },
 
   togglePlayback: async () => {
-    const { sound, isPlaying } = get();
-
-    if (sound) {
-      if (isPlaying) {
-        await sound.pauseAsync();
-      } else {
-        await sound.playAsync();
-      }
-      set({ isPlaying: !isPlaying });
+    const state = await TrackPlayer.getState();
+    if (state === State.Playing) {
+      await TrackPlayer.pause();
+    } else {
+      await TrackPlayer.play();
     }
   },
 
   nextTrack: async () => {
-    const { currentPlaylist, currentTrack, isShuffled, repeatMode } = get();
-    if (
-      !currentTrack ||
-      !currentPlaylist ||
-      currentPlaylist.tracks.length === 0
-    )
-      return;
-
-    if (repeatMode === "one") {
-      await get().loadTrack(currentTrack);
-      return;
+    const queue = await TrackPlayer.getQueue();
+    if (queue.length === 0) return;
+    
+    await TrackPlayer.skipToNext();
+    const track = await TrackPlayer.getActiveTrack();
+    if (track) {
+        set({ currentTrack: track as Track });
     }
+},
 
-    let nextIndex;
-    if (isShuffled) {
-      nextIndex = Math.floor(Math.random() * currentPlaylist.tracks.length);
-    } else {
-      const currentIndex = currentPlaylist.tracks.findIndex(
-        (track) => track.id === currentTrack.id
-      );
-      nextIndex = currentIndex + 1;
-
-      if (nextIndex >= currentPlaylist.tracks.length) {
-        if (repeatMode === "all") {
-          nextIndex = 0;
-        } else {
-          return;
-        }
-      }
+previousTrack: async () => {
+    const queue = await TrackPlayer.getQueue();
+    if (queue.length === 0) return;
+    
+    await TrackPlayer.skipToPrevious();
+    const track = await TrackPlayer.getActiveTrack();
+    if (track) {
+        set({ currentTrack: track as Track });
     }
+},
 
-    await get().loadTrack(currentPlaylist.tracks[nextIndex]);
+  seekTo: async (position) => {
+    await TrackPlayer.seekTo(position);
   },
 
-  previousTrack: async () => {
-    const { currentPlaylist, currentTrack, isShuffled, repeatMode } = get();
-    if (
-      !currentTrack ||
-      !currentPlaylist ||
-      currentPlaylist.tracks.length === 0
-    )
-      return;
-
-    if (repeatMode === "one") {
-      await get().loadTrack(currentTrack);
-      return;
-    }
-
-    let prevIndex;
-    if (isShuffled) {
-      prevIndex = Math.floor(Math.random() * currentPlaylist.tracks.length);
+  toggleShuffle: async () => {
+    const { isShuffled, currentPlaylist } = get();
+    set({ isShuffled: !isShuffled });
+    
+    if (!currentPlaylist) return;
+    
+    const tracks = [...currentPlaylist.tracks];
+    if (!isShuffled) {
+      // Shuffle tracks
+      for (let i = tracks.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [tracks[i], tracks[j]] = [tracks[j], tracks[i]];
+      }
     } else {
-      const currentIndex = currentPlaylist.tracks.findIndex(
-        (track) => track.id === currentTrack.id
-      );
-      prevIndex = currentIndex - 1;
-
-      if (prevIndex < 0) {
-        if (repeatMode === "all") {
-          prevIndex = currentPlaylist.tracks.length - 1;
-        } else {
-          return;
-        }
+      // Restore original playlist order
+      tracks.sort((a, b) => currentPlaylist.tracks.indexOf(a) - currentPlaylist.tracks.indexOf(b));
+    }
+    
+    await TrackPlayer.reset();
+    await TrackPlayer.add(tracks);
+    
+    // If there was a current track, try to maintain its position
+    if (get().currentTrack) {
+      const currentIndex = tracks.findIndex(t => t.id === get().currentTrack?.id);
+      if (currentIndex !== -1) {
+        await TrackPlayer.skip(currentIndex);
       }
     }
+},
 
-    await get().loadTrack(currentPlaylist.tracks[prevIndex]);
+  toggleRepeat: () => {
+    const { repeatMode } = get();
+    const newMode = repeatMode === RepeatMode.Off 
+      ? RepeatMode.Queue 
+      : repeatMode === RepeatMode.Queue 
+        ? RepeatMode.Track 
+        : RepeatMode.Off;
+        
+    TrackPlayer.setRepeatMode(newMode);
+    set({ repeatMode: newMode });
   },
 
   addLocalTrack: async (track) => {
@@ -278,34 +236,6 @@ export const useAudioStore = create<AudioState>((set, get) => ({
     });
   },
 
-  setProgress: (progress) => {
-    set({ progress });
-  },
-
-  seekTo: async (position) => {
-    const { sound, duration } = get();
-    if (sound) {
-      const validPosition = Math.max(0, Math.min(position, duration));
-      await sound.setPositionAsync(validPosition);
-      set({ progress: validPosition });
-    }
-  },
-
-  toggleShuffle: () => {
-    set((state) => ({ isShuffled: !state.isShuffled }));
-  },
-
-  toggleRepeat: () => {
-    set((state) => ({
-      repeatMode:
-        state.repeatMode === "off"
-          ? "all"
-          : state.repeatMode === "all"
-          ? "one"
-          : "off",
-    }));
-  },
-
   clearLocalTracks: () => {
     AsyncStorage.removeItem("localTracks");
     set({ localTracks: [] });
@@ -373,44 +303,6 @@ export const useAudioStore = create<AudioState>((set, get) => ({
       set({ playlists: [testPlaylist] });
       await AsyncStorage.setItem("playlists", JSON.stringify([testPlaylist]));
     }
-  },
-
-  toggleLike: (track) => {
-    set((state) => {
-      const isLiked = state.likedTracks.some((t) => t.id === track.id);
-      const updatedLikedTracks = isLiked
-        ? state.likedTracks.filter((t) => t.id !== track.id)
-        : [...state.likedTracks, { ...track, liked: true }];
-      AsyncStorage.setItem("likedTracks", JSON.stringify(updatedLikedTracks));
-      return { likedTracks: updatedLikedTracks };
-    });
-  },
-
-  downloadTrack: (track) => {
-    set((state) => {
-      const updatedDownloads = [
-        ...state.downloadedTracks,
-        { ...track, downloadDate: new Date().toISOString() },
-      ];
-      AsyncStorage.setItem(
-        "downloadedTracks",
-        JSON.stringify(updatedDownloads)
-      );
-      return { downloadedTracks: updatedDownloads };
-    });
-  },
-
-  removeDownload: (trackId) => {
-    set((state) => {
-      const updatedDownloads = state.downloadedTracks.filter(
-        (t) => t.id !== trackId
-      );
-      AsyncStorage.setItem(
-        "downloadedTracks",
-        JSON.stringify(updatedDownloads)
-      );
-      return { downloadedTracks: updatedDownloads };
-    });
   },
 
   loadPlaylists: async () => {

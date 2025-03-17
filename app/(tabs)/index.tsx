@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { useRouter } from "expo-router";
-import { Audio, AVPlaybackStatus, AVPlaybackStatusSuccess } from "expo-av";
+import TrackPlayer, { State, usePlaybackState, type PlaybackState } from "react-native-track-player";
 import { Track, useAudioStore } from "@/store/audioStore";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
@@ -25,13 +25,13 @@ const HomeScreen: React.FC = () => {
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const { theme, isDark, toggleTheme } = useTheme();
+  const playbackState = usePlaybackState();
 
   const {
     addLocalTrack,
     localTracks,
     loadTrack,
     currentTrack,
-    isPlaying,
     togglePlayback,
     nextTrack,
     previousTrack,
@@ -40,6 +40,8 @@ const HomeScreen: React.FC = () => {
     playlists,
     addToPlaylist,
   } = useAudioStore();
+
+  const isPlaying = playbackState?.state === State.Playing;
   const router = useRouter();
 
   useEffect(() => {
@@ -55,14 +57,8 @@ const HomeScreen: React.FC = () => {
 
       if (!result.canceled && result.assets) {
         for (const asset of result.assets) {
-          const { sound } = await Audio.Sound.createAsync(
-            { uri: asset.uri },
-            { shouldPlay: false }
-          );
-
-          const status = (await sound.getStatusAsync()) as AVPlaybackStatus;
-          const duration =
-            (status as AVPlaybackStatusSuccess).durationMillis || 0;
+          const status = await TrackPlayer.getDuration();
+          const duration = status || 0;
 
           const track: Track = {
             id: asset.uri,
@@ -70,11 +66,10 @@ const HomeScreen: React.FC = () => {
             artist: "Unknown",
             artwork: require("../../assets/images/list-image.jpeg"),
             url: asset.uri,
-            duration: duration,
+            duration: duration * 1000, // Convert to milliseconds
           };
 
           addLocalTrack(track);
-          await sound.unloadAsync();
         }
       }
     } catch (error) {

@@ -1,33 +1,23 @@
 import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { Audio } from "expo-av";
+import TrackPlayer from 'react-native-track-player';
+import { setupPlayer } from '@/services/trackPlayerServices';
+import { PlaybackService } from '@/services/playbackService';
 import { useFrameworkReady } from "@/hooks/useFrameworkReady";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import { usePlaylistStore } from "@/store/playlistStore";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+// Register playback service
+TrackPlayer.registerPlaybackService(() => PlaybackService);
+
 const MainLayout: React.FC = () => {
   const { isDark } = useTheme();
   const { loadPlaylists } = usePlaylistStore();
 
   useEffect(() => {
-    const initAudio = async () => {
-      try {
-        await Audio.setAudioModeAsync({
-          allowsRecordingIOS: false,
-          staysActiveInBackground: true,
-          playsInSilentModeIOS: true,
-          shouldDuckAndroid: true,
-          playThroughEarpieceAndroid: false,
-        });
-      } catch (error) {
-        console.error("Erreur d'initialisation audio:", error);
-      }
-    };
-
-    initAudio();
     loadPlaylists();
   }, [loadPlaylists]);
 
@@ -71,6 +61,18 @@ const MainLayout: React.FC = () => {
 
 const RootLayout: React.FC = () => {
   useFrameworkReady();
+
+  useEffect(() => {
+    const initPlayer = async () => {
+      try {
+        await setupPlayer();
+      } catch (error) {
+        console.error("Error initializing track player:", error);
+      }
+    };
+
+    initPlayer();
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

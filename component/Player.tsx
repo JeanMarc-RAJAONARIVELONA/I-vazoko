@@ -12,6 +12,12 @@ import Slider from "@react-native-community/slider";
 import { useEffect } from "react";
 import { Track, useAudioStore } from "@/store/audioStore";
 import { useTheme } from "@/context/ThemeContext";
+import { 
+  State, 
+  useProgress, 
+  usePlaybackState,
+  RepeatMode,
+} from "react-native-track-player";
 
 const { width, height } = Dimensions.get("window");
 
@@ -23,52 +29,13 @@ export default function Player({}: PlayerProps) {
     ? JSON.parse(params.track as string)
     : null;
   const { theme } = useTheme();
-
-  const styles = StyleSheet.create({
-    ...baseStyles,
-    container: {
-      ...baseStyles.container,
-      backgroundColor: theme.background,
-    },
-    headerButton: {
-      ...baseStyles.headerButton,
-      backgroundColor: theme.tertyBg || theme.background,
-    },
-    secondaryButton: {
-      ...baseStyles.secondaryButton,
-      backgroundColor: theme.tertyBg || theme.background,
-    },
-    mainButton: {
-      ...baseStyles.mainButton,
-      backgroundColor: "rgba(140,92,246,0.2)",
-    },
-    playButton: {
-      ...baseStyles.playButton,
-      backgroundColor: theme.tint,
-      shadowColor: theme.tint,
-    },
-    visualizerBar: {
-      ...baseStyles.visualizerBar,
-      backgroundColor: theme.tint,
-    },
-  });
-
-  if (!track) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.background }]}>
-        <Text style={{ color: theme.text }}>
-          Erreur : Aucune piste sélectionnée
-        </Text>
-      </View>
-    );
-  }
+  const playbackState = usePlaybackState();
+  const progress = useProgress();
 
   const {
     currentTrack,
-    isPlaying,
-    progress,
-    isShuffled,
     repeatMode,
+    isShuffled,
     loadTrack,
     togglePlayback,
     nextTrack,
@@ -78,9 +45,11 @@ export default function Player({}: PlayerProps) {
     toggleRepeat,
   } = useAudioStore();
 
+  const isPlaying = playbackState?.state === State.Playing;
+
   useEffect(() => {
-    if (!currentTrack || currentTrack.id !== track.id) {
-      loadTrack(track);
+    if (!currentTrack || currentTrack.id !== track?.id) {
+      track && loadTrack(track);
     }
   }, [track, currentTrack, loadTrack]);
 
@@ -103,6 +72,31 @@ export default function Player({}: PlayerProps) {
         ))}
     </View>
   );
+
+  const getRepeatIcon = (mode: RepeatMode) => {
+    switch (mode) {
+      case RepeatMode.Track:
+        return "repeat";
+      case RepeatMode.Queue:
+        return "repeat";
+      default:
+        return "repeat-outline";
+    }
+  };
+
+  const isRepeatActive = (mode: RepeatMode) => {
+    return mode !== RepeatMode.Off;
+  };
+
+  if (!track) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background }]}>
+        <Text style={{ color: theme.text }}>
+          Erreur : Aucune piste sélectionnée
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -151,21 +145,21 @@ export default function Player({}: PlayerProps) {
         <View style={styles.progressContainer}>
           <AudioVisualizer />
           <Slider
-            value={progress}
+            value={progress.position}
             onSlidingComplete={(value) => seekTo(value)}
             style={styles.progressBar}
             minimumValue={0}
-            maximumValue={currentTrack?.duration || 1}
+            maximumValue={progress.duration || 1}
             minimumTrackTintColor={theme.tint}
             maximumTrackTintColor={theme.tabIconDefault}
             thumbTintColor={theme.tint}
           />
           <View style={styles.timeContainer}>
             <Text style={[styles.timeText, { color: theme.icon }]}>
-              {formatTime(progress)}
+              {formatTime(progress.position * 1000)}
             </Text>
             <Text style={[styles.timeText, { color: theme.icon }]}>
-              {formatTime(currentTrack?.duration || 0)}
+              {formatTime(progress.duration * 1000)}
             </Text>
           </View>
         </View>
@@ -224,11 +218,11 @@ export default function Player({}: PlayerProps) {
             ]}
           >
             <Ionicons
-              name={repeatMode === "one" ? "repeat" : "repeat-outline"}
-              color={repeatMode !== "off" ? theme.tint : theme.icon}
+              name={getRepeatIcon(repeatMode)}
+              color={isRepeatActive(repeatMode) ? theme.tint : theme.icon}
               size={22}
             />
-            {repeatMode === "one" && (
+            {repeatMode === RepeatMode.Track && (
               <Text style={[styles.repeatOne, { color: theme.tint }]}>1</Text>
             )}
           </TouchableOpacity>
@@ -238,7 +232,7 @@ export default function Player({}: PlayerProps) {
   );
 }
 
-const baseStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   errorText: {
     fontSize: 16,
     textAlign: "center",
