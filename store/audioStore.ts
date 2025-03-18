@@ -1,9 +1,10 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import TrackPlayer, { 
+import TrackPlayer, {
   Track as PlayerTrack,
   RepeatMode,
-  State
+  State,
+  Event
 } from "react-native-track-player";
 
 export interface Track extends Omit<PlayerTrack, 'url'> {
@@ -19,7 +20,7 @@ export interface Track extends Omit<PlayerTrack, 'url'> {
 }
 
 export interface Playlist {
-  id: string; 
+  id: string;
   name: string;
   tracks: Track[];
   createdAt: string;
@@ -36,7 +37,9 @@ interface AudioState {
   downloadedTracks: Track[];
   isShuffled: boolean;
   repeatMode: RepeatMode;
-  loadTrack: (track: Track) => Promise<void>;
+  isLoading: boolean;
+  loadTrack: (track: Track, playlistTracks?: Track[]) => Promise<void>;
+  setCurrentTrack: (track: Track) => void;
   togglePlayback: () => Promise<void>;
   nextTrack: () => Promise<void>;
   previousTrack: () => Promise<void>;
@@ -51,7 +54,6 @@ interface AudioState {
   toggleRepeat: () => void;
   clearLocalTracks: () => void;
   loadLocalTracks: () => Promise<void>;
-  loadTestTracks: () => Promise<void>;
   loadPlaylists: () => Promise<void>;
   loadLibraryData: () => Promise<void>;
 }
@@ -59,20 +61,60 @@ interface AudioState {
 export const useAudioStore = create<AudioState>((set, get) => ({
   currentTrack: null,
   currentPlaylist: null,
+  isLoading: false,
   playlists: [],
   localTracks: [],
   likedTracks: [],
+  setCurrentTrack: (track: Track) => set({ currentTrack: track }),
   recentlyPlayed: [],
   downloadedTracks: [],
   isShuffled: false,
   repeatMode: RepeatMode.Off,
 
-  loadTrack: async (track) => {
-    await TrackPlayer.reset();
-    await TrackPlayer.add(track);
-    await TrackPlayer.play();
-    set({ currentTrack: track });
-  },
+  loadTrack: async (track: Track, playlistTracks?: Track[]) => {
+    try {
+        await TrackPlayer.reset();
+        let tracksToAdd: Track[] = [];
+        
+        if (playlistTracks) {
+            const trackIndex = playlistTracks.findIndex(t => t.id === track.id);
+            if (trackIndex !== -1) {
+                tracksToAdd = [
+                    ...playlistTracks.slice(trackIndex),
+                    ...playlistTracks.slice(0, trackIndex)
+                ];
+            }
+        } else {
+            const { localTracks } = get();
+            const trackIndex = localTracks.findIndex(t => t.id === track.id);
+            if (trackIndex !== -1) {
+                tracksToAdd = [
+                    ...localTracks.slice(trackIndex),
+                    ...localTracks.slice(0, trackIndex)
+                ];
+            } else {
+                tracksToAdd = [track];
+            }
+        }
+
+        if (tracksToAdd.length > 0) {
+            await TrackPlayer.add(tracksToAdd);
+            
+            // Use correct Event type
+            TrackPlayer.addEventListener(Event.PlaybackActiveTrackChanged, async (event) => {
+                const currentTrack = await TrackPlayer.getActiveTrack();
+                if (currentTrack) {
+                    set({ currentTrack: currentTrack as Track });
+                }
+            });
+
+            await TrackPlayer.play();
+            set({ currentTrack: tracksToAdd[0] });
+        }
+    } catch (error) {
+        console.error('Error loading track:', error);
+    }
+},
 
   togglePlayback: async () => {
     const state = await TrackPlayer.getState();
@@ -86,22 +128,30 @@ export const useAudioStore = create<AudioState>((set, get) => ({
   nextTrack: async () => {
     const queue = await TrackPlayer.getQueue();
     if (queue.length === 0) return;
-    
-    await TrackPlayer.skipToNext();
-    const track = await TrackPlayer.getActiveTrack();
-    if (track) {
-        set({ currentTrack: track as Track });
+
+    try {
+        await TrackPlayer.skipToNext();
+        const track = await TrackPlayer.getActiveTrack();
+        if (track) {
+            set({ currentTrack: track as Track });
+        }
+    } catch (error) {
+        console.error("Error skipping to next track:", error);
     }
 },
 
 previousTrack: async () => {
     const queue = await TrackPlayer.getQueue();
     if (queue.length === 0) return;
-    
-    await TrackPlayer.skipToPrevious();
-    const track = await TrackPlayer.getActiveTrack();
-    if (track) {
-        set({ currentTrack: track as Track });
+
+    try {
+        await TrackPlayer.skipToPrevious();
+        const track = await TrackPlayer.getActiveTrack();
+        if (track) {
+            set({ currentTrack: track as Track });
+        }
+    } catch (error) {
+        console.error("Error skipping to previous track:", error);
     }
 },
 
@@ -112,9 +162,9 @@ previousTrack: async () => {
   toggleShuffle: async () => {
     const { isShuffled, currentPlaylist } = get();
     set({ isShuffled: !isShuffled });
-    
+
     if (!currentPlaylist) return;
-    
+
     const tracks = [...currentPlaylist.tracks];
     if (!isShuffled) {
       // Shuffle tracks
@@ -126,10 +176,10 @@ previousTrack: async () => {
       // Restore original playlist order
       tracks.sort((a, b) => currentPlaylist.tracks.indexOf(a) - currentPlaylist.tracks.indexOf(b));
     }
-    
+
     await TrackPlayer.reset();
     await TrackPlayer.add(tracks);
-    
+
     // If there was a current track, try to maintain its position
     if (get().currentTrack) {
       const currentIndex = tracks.findIndex(t => t.id === get().currentTrack?.id);
@@ -137,16 +187,16 @@ previousTrack: async () => {
         await TrackPlayer.skip(currentIndex);
       }
     }
-},
+  },
 
   toggleRepeat: () => {
     const { repeatMode } = get();
-    const newMode = repeatMode === RepeatMode.Off 
-      ? RepeatMode.Queue 
-      : repeatMode === RepeatMode.Queue 
-        ? RepeatMode.Track 
-        : RepeatMode.Off;
-        
+    const newMode = repeatMode === RepeatMode.Off
+        ? RepeatMode.Queue
+        : repeatMode === RepeatMode.Queue
+            ? RepeatMode.Track
+            : RepeatMode.Off;
+
     TrackPlayer.setRepeatMode(newMode);
     set({ repeatMode: newMode });
   },
@@ -185,15 +235,15 @@ previousTrack: async () => {
   deletePlaylist: (playlistId) => {
     set((state) => {
       const updatedPlaylists = state.playlists.filter(
-        (p) => p.id !== playlistId
+          (p) => p.id !== playlistId
       );
       AsyncStorage.setItem("playlists", JSON.stringify(updatedPlaylists));
       return {
         playlists: updatedPlaylists,
         currentPlaylist:
-          state.currentPlaylist?.id === playlistId
-            ? null
-            : state.currentPlaylist,
+            state.currentPlaylist?.id === playlistId
+                ? null
+                : state.currentPlaylist,
       };
     });
   },
@@ -251,57 +301,10 @@ previousTrack: async () => {
       if (storedTracks) {
         const parsedTracks = JSON.parse(storedTracks);
         set({ localTracks: parsedTracks });
-      } else {
-        await get().loadTestTracks();
       }
     } catch (error) {
       console.error("Erreur lors du chargement des titres:", error);
       throw error;
-    }
-  },
-
-  loadTestTracks: async () => {
-    const testTracks: Track[] = [
-      {
-        id: "1",
-        title: "Ny Aiko",
-        artist: "Ambondrona",
-        artwork: "https://picsum.photos/200/200",
-        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-        duration: 240,
-      },
-      {
-        id: "2",
-        title: "Raha Mbola Misy",
-        artist: "Njakatiana",
-        artwork: "https://picsum.photos/200/200",
-        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-        duration: 180,
-      },
-      {
-        id: "3",
-        title: "Tsy Maninona",
-        artist: "Jaojoby",
-        artwork: "https://picsum.photos/200/200",
-        url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-        duration: 300,
-      },
-    ];
-
-    set({ localTracks: testTracks });
-    await AsyncStorage.setItem("localTracks", JSON.stringify(testTracks));
-
-    const { playlists } = get();
-    if (playlists.length === 0) {
-      const testPlaylist: Playlist = {
-        id: Date.now().toString(),
-        name: "Playlist Gasy",
-        tracks: testTracks,
-        createdAt: new Date().toISOString(),
-        artwork: "https://picsum.photos/200/200",
-      };
-      set({ playlists: [testPlaylist] });
-      await AsyncStorage.setItem("playlists", JSON.stringify([testPlaylist]));
     }
   },
 
@@ -314,12 +317,12 @@ previousTrack: async () => {
 
   loadLibraryData: async () => {
     const [playlists, likedTracks, downloadedTracks, recentlyPlayed] =
-      await Promise.all([
-        AsyncStorage.getItem("playlists"),
-        AsyncStorage.getItem("likedTracks"),
-        AsyncStorage.getItem("downloadedTracks"),
-        AsyncStorage.getItem("recentlyPlayed"),
-      ]);
+        await Promise.all([
+          AsyncStorage.getItem("playlists"),
+          AsyncStorage.getItem("likedTracks"),
+          AsyncStorage.getItem("downloadedTracks"),
+          AsyncStorage.getItem("recentlyPlayed"),
+        ]);
 
     set({
       playlists: playlists ? JSON.parse(playlists) : [],

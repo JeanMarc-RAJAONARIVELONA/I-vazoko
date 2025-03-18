@@ -1,7 +1,6 @@
 import Player from "@/component/Player";
+import React from "react";
 
-const PlayerRoute: React.FC = () => {
+export default function PlayerScreen() {
   return <Player />;
-};
-
-export default PlayerRoute;
+}

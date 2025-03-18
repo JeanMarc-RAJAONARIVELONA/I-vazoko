@@ -37,7 +37,7 @@ export default function TabLayout() {
           options={{
             title: "Musique",
             tabBarIcon: ({ color, size }: { color: string; size: number }) => (
-              <Ionicons name="musical-note" size={size} color={color} />
+              <Ionicons name="musical-notes-sharp" size={size} color={color} />
             ),
           }}
         />

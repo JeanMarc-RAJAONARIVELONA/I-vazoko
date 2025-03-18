@@ -2,7 +2,7 @@ import CreatePlaylist from "@/component/CreatePlaylist";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useTheme } from "@/context/ThemeContext";
 
-const CreatePlaylistRoute: React.FC = () => {
+export default function CreatePlaylistScreen() {
   const { mode, playlistId } = useLocalSearchParams();
   const { theme } = useTheme();
 
@@ -30,4 +30,4 @@ const CreatePlaylistRoute: React.FC = () => {
   );
 };
 
-export default CreatePlaylistRoute;
+

@@ -1,32 +1,38 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-  Modal,
-  ImageBackground,
-} from "react-native";
-import * as DocumentPicker from "expo-document-picker";
+import { View, Text, FlatList, StyleSheet, Dimensions } from "react-native";
 import { useRouter } from "expo-router";
-import TrackPlayer, { State, usePlaybackState, type PlaybackState } from "react-native-track-player";
+import { State, usePlaybackState } from "react-native-track-player";
 import { Track, useAudioStore } from "@/store/audioStore";
-import { Image } from "expo-image";
-import { Ionicons } from "@expo/vector-icons";
 import { RenderItem } from "@/component/RenderItem";
 import AudioControlBar from "@/component/AudioControlBar";
 import { useTheme } from "@/context/ThemeContext";
+import WelcomeHeader from "@/component/WelcomeHeader";
+import ImportMusicButton from "@/component/ImportMusicButton";
+import AddToPlaylistModal from "@/component/AddToPlaylistModal";
+import {
+  requestMusicLibraryPermission,
+  fetchMusicAssets,
+  convertAssetsToTracks,
+  filterDuplicateTracks,
+} from "@/utils/musicLibrary";
 
 const { width, height } = Dimensions.get("window");
 
+/**
+ * HomeScreen component - Main screen of the application
+ */
 const HomeScreen: React.FC = () => {
+  // State
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
-  const { theme, isDark, toggleTheme } = useTheme();
-  const playbackState = usePlaybackState();
+  const [isLoading, setIsLoading] = useState(false);
 
+  // Hooks
+  const { theme } = useTheme();
+  const playbackState = usePlaybackState();
+  const router = useRouter();
+
+  // Store
   const {
     addLocalTrack,
     localTracks,
@@ -42,45 +48,63 @@ const HomeScreen: React.FC = () => {
   } = useAudioStore();
 
   const isPlaying = playbackState?.state === State.Playing;
-  const router = useRouter();
 
+  // Load tracks on component mount
   useEffect(() => {
     loadLocalTracks();
   }, []);
 
+  /**
+   * Import music from the device's music library
+   */
   const handleImportMusic = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: "audio/*",
-        multiple: true,
-      });
+      setIsLoading(true);
 
-      if (!result.canceled && result.assets) {
-        for (const asset of result.assets) {
-          const status = await TrackPlayer.getDuration();
-          const duration = status || 0;
+      // Request permissions
+      const granted = await requestMusicLibraryPermission();
+      if (!granted) {
+        console.log("Permission to access media library was denied");
+        return;
+      }
 
-          const track: Track = {
-            id: asset.uri,
-            title: asset.name,
-            artist: "Unknown",
-            artwork: require("../../assets/images/list-image.jpeg"),
-            url: asset.uri,
-            duration: duration * 1000, // Convert to milliseconds
-          };
+      // Fetch music assets
+      const assets = await fetchMusicAssets(50);
 
-          addLocalTrack(track);
+      if (assets.length > 0) {
+        // Convert assets to tracks
+        const defaultArtwork = require("../../assets/images/unknown_track.png");
+        const processedTracks = convertAssetsToTracks(assets, defaultArtwork);
+
+        // Filter out duplicates
+        const newTracks = filterDuplicateTracks(processedTracks, localTracks);
+
+        // Add tracks to library
+        for (const track of newTracks) {
+          await addLocalTrack(track);
         }
+
+        console.log(`Successfully imported ${newTracks.length} new tracks`);
+      } else {
+        console.log("No audio files found in the media library");
       }
     } catch (error) {
       console.error("Error importing music:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
+  /**
+   * Clear all tracks from the library
+   */
   const clearSelection = () => {
     clearLocalTracks();
   };
 
+  /**
+   * Navigate to the player screen
+   */
   const goToPlayer = () => {
     if (currentTrack) {
       router.push({
@@ -90,64 +114,49 @@ const HomeScreen: React.FC = () => {
     }
   };
 
+  /**
+   * Handle adding a track to a playlist
+   */
+  const handleAddToPlaylist = (track: Track) => {
+    setSelectedTrack(track);
+    setShowPlaylistModal(true);
+  };
+
+  /**
+   * Close the playlist modal
+   */
+  const closePlaylistModal = () => {
+    setShowPlaylistModal(false);
+    setSelectedTrack(null);
+  };
+
+  /**
+   * Add the selected track to a playlist
+   */
+  const handleAddToPlaylistConfirm = (playlistId: string, track: Track) => {
+    addToPlaylist(playlistId, track);
+    closePlaylistModal();
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.tint }]}>
-        <View style={styles.welcomeContent}>
-          <Text style={styles.welcomeTitle}>Bienvenue sur I-vazoko</Text>
-          <Text style={styles.welcomeSubtitle}>
-            Votre lecteur de musique préféré !
-          </Text>
-          <Text style={styles.welcomeDescription}>
-            Découvrez un nouveau lecteur de musique{"\n"}
-            Écoutez vos favoris à tout moment.{"\n"}
-          </Text>
-        </View>
-        <Image
-          source={require("../../assets/images/women-listen.png")}
-          style={styles.welcomeImage}
-          contentFit="cover"
-        />
-      </View>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        style={[
-          styles.importContainer,
-          { borderColor: theme.tint, backgroundColor: theme.buttonBg },
-        ]}
-        onPress={handleImportMusic}
-      >
-        <Ionicons name="cloud-upload-outline" size={30} color={theme.text} />
-        <Text style={[styles.importSubtitle, { color: theme.text }]}>
-          Select MP3 or other audio files from your device
-        </Text>
+      {/* Welcome Header */}
+      <WelcomeHeader />
 
-        <TouchableOpacity
-          style={[styles.clearButton, { backgroundColor: theme.buttonBg }]}
-          onPress={clearSelection}
-        >
-          <Text style={[styles.clearText, { color: theme.text }]}>
-            ↻ Clear Selection
-          </Text>
-        </TouchableOpacity>
-        <Text style={[styles.supportedFormats, { color: theme.text }]}>
-          Supported formats: MP3, WAV, AAC, and other browser-compatible audio
-        </Text>
-      </TouchableOpacity>
-      <Text
-        style={{
-          width: "100%",
-          fontSize: 16,
-          color: theme.text,
-          fontWeight: "bold",
-          textAlign: "left",
-          boxShadow: "0px 2px 4px",
-          shadowColor: theme.shadowColor,
-          padding: 10,
-        }}
-      >
+      {/* Import Music Button */}
+      <ImportMusicButton
+        isLoading={isLoading}
+        onImport={handleImportMusic}
+        tracksCount={localTracks.length}
+        onClear={clearSelection}
+      />
+
+      {/* Recent Imports Section */}
+      <Text style={[styles.sectionTitle, { color: theme.text }]}>
         Importé récemment
       </Text>
+
+      {/* Tracks List */}
       <FlatList
         data={localTracks}
         renderItem={({ item }: { item: Track }) => (
@@ -157,10 +166,7 @@ const HomeScreen: React.FC = () => {
             currentTrack={currentTrack}
             isPlaying={isPlaying}
             togglePlayback={togglePlayback}
-            onAddToPlaylist={(track) => {
-              setSelectedTrack(track);
-              setShowPlaylistModal(true);
-            }}
+            onAddToPlaylist={handleAddToPlaylist}
           />
         )}
         keyExtractor={(item) => item.id}
@@ -170,108 +176,16 @@ const HomeScreen: React.FC = () => {
         }
       />
 
-      <Modal
+      {/* Add to Playlist Modal */}
+      <AddToPlaylistModal
         visible={showPlaylistModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowPlaylistModal(false)}
-      >
-        <TouchableOpacity
-          style={styles.modalOverlay}
-          activeOpacity={1}
-          onPress={() => setShowPlaylistModal(false)}
-        >
-          <View
-            style={[
-              styles.modalContainer,
-              { backgroundColor: theme.background },
-            ]}
-          >
-            <View
-              style={[
-                styles.modalContent,
-                { backgroundColor: theme.background },
-              ]}
-            >
-              <View style={styles.modalHeader}>
-                <Text style={[styles.modalTitle, { color: theme.text }]}>
-                  Ajouter à une playlist
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowPlaylistModal(false)}
-                  style={styles.closeButton}
-                >
-                  <Ionicons name="close" size={24} color={theme.text} />
-                </TouchableOpacity>
-              </View>
-              {selectedTrack && (
-                <View style={styles.selectedTrack}>
-                  <ImageBackground
-                    source={require("../../assets/images/list-image.jpeg")}
-                    style={styles.selectedTrackImage}
-                    imageStyle={{ borderRadius: 8 }}
-                  />
-                  <View style={styles.selectedTrackInfo}>
-                    <Text
-                      style={[styles.selectedTrackTitle, { color: theme.text }]}
-                      numberOfLines={1}
-                    >
-                      {selectedTrack.title}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.selectedTrackArtist,
-                        { color: theme.textDim },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {selectedTrack.artist}
-                    </Text>
-                  </View>
-                </View>
-              )}
-              <FlatList
-                data={playlists}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.playlistItem}
-                    onPress={() => {
-                      if (selectedTrack) {
-                        addToPlaylist(item.id, selectedTrack);
-                        setShowPlaylistModal(false);
-                        setSelectedTrack(null);
-                      }
-                    }}
-                  >
-                    <View style={styles.playlistItemContent}>
-                      <Text
-                        style={[styles.playlistName, { color: theme.text }]}
-                      >
-                        {item.name}
-                      </Text>
-                      <Text
-                        style={[styles.trackCount, { color: theme.textDim }]}
-                      >
-                        {item.tracks.length} titres
-                      </Text>
-                    </View>
-                    <Ionicons
-                      name="add-circle-outline"
-                      size={24}
-                      color={theme.textDim}
-                    />
-                  </TouchableOpacity>
-                )}
-                contentContainerStyle={styles.playlistList}
-                showsVerticalScrollIndicator={true}
-                style={styles.playlistScrollView}
-              />
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        onClose={closePlaylistModal}
+        selectedTrack={selectedTrack}
+        playlists={playlists}
+        onAddToPlaylist={handleAddToPlaylistConfirm}
+      />
 
+      {/* Audio Control Bar */}
       {currentTrack && (
         <AudioControlBar
           currentTrack={currentTrack}
@@ -385,6 +299,13 @@ const styles = StyleSheet.create({
   list: {
     flex: 1,
   },
+  sectionTitle: {
+    width: "100%",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "left",
+    padding: 10,
+  },
   noResults: { textAlign: "center", marginTop: 20 },
   modalOverlay: {
     flex: 1,
@@ -460,4 +381,6 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default function Home() {
+  return <HomeScreen />;
+}
