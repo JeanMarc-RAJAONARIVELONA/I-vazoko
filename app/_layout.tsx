@@ -78,10 +78,12 @@ const RootLayout: React.FC = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <MainLayout />
-        <StatusBar style="auto" />
+        <StatusBar style="dark" />
       </ThemeProvider>
     </GestureHandlerRootView>
   );
 };
 
-export default RootLayout;
+export default function Layout() {
+  return <RootLayout />;
+}

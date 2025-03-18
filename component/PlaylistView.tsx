@@ -399,7 +399,7 @@ export default function PlaylistView({ playlistId }: { playlistId: string }) {
           <Image
             source={{ uri: playlist.artwork }}
             style={styles.playlistArtwork}
-            defaultSource={require("@/assets/images/list-image.jpeg")}
+            defaultSource={require("@/assets/images/unknown_track.png")}
           />
         ) : (
           <View
@@ -461,7 +461,7 @@ export default function PlaylistView({ playlistId }: { playlistId: string }) {
                 <View style={styles.trackContent}>
                   <Text style={styles.trackNumber}>{index + 1}</Text>
                   <Image
-                    source={require("@/assets/images/list-image.jpeg")}
+                    source={require("@/assets/images/unknown_track.png")}
                     style={styles.trackArtwork}
                   />
                   <View style={styles.trackInfo}>

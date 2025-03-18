@@ -12,6 +12,8 @@ export interface UserState {
   setProfileImage: (image: string) => void;
   toggleThemeMode: () => void;
   setThemeMode: (mode: ThemeMode) => void;
+  isWelcomeShown: boolean;
+  setWelcomeShown: (shown: boolean) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -26,6 +28,8 @@ export const useUserStore = create<UserState>()(
         themeMode: state.themeMode === 'light' ? 'dark' : 'light' 
       })),
       setThemeMode: (mode: ThemeMode) => set({ themeMode: mode }),
+      isWelcomeShown: true,
+      setWelcomeShown: (shown: boolean) => set({ isWelcomeShown: shown }),
     }),
     {
       name: 'user-storage',

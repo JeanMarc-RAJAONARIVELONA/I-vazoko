@@ -252,7 +252,7 @@ export default function CreatePlaylist({
               disabled={isLoading}
             >
               <Image
-                source={require("../assets/images/list-image.jpeg")}
+                source={require("../assets/images/unknown_track.png")}
                 style={styles.trackImage}
                 contentFit="cover"
               />

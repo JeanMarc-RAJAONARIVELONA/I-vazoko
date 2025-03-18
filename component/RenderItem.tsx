@@ -3,7 +3,7 @@ import { Track } from "@/store/audioStore";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { FC } from "react";
+import { FC, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -11,17 +11,20 @@ import {
   View,
   Dimensions,
 } from "react-native";
+import { formatDuration } from "@/utils/formatters";
 
 const { width } = Dimensions.get("window");
 
-export const RenderItem: FC<{
-  item: any;
+interface RenderItemProps {
+  item: Track;
   loadTrack: (track: Track) => Promise<void>;
   currentTrack: Track | null;
-  isPlaying: boolean;
+  isPlaying?: boolean;
   togglePlayback: () => Promise<void>;
   onAddToPlaylist?: (track: Track) => void;
-}> = ({
+}
+
+export const RenderItem: FC<RenderItemProps> = ({
   item,
   loadTrack,
   currentTrack,
@@ -30,12 +33,11 @@ export const RenderItem: FC<{
   onAddToPlaylist,
 }) => {
   const { theme } = useTheme();
+  const [artworkError, setArtworkError] = useState(false);
+  const fallbackImage = require("../assets/images/unknown_track.png");
 
-  const formatDuration = (duration: number) => {
-    const minutes = Math.floor(duration / 60000);
-    const seconds = ((duration % 60000) / 1000).toFixed(0);
-    return `${minutes}:${parseInt(seconds) < 10 ? "0" : ""}${seconds}`;
-  };
+  const handleImageError = () => setArtworkError(true);
+
   return (
     <View style={styles.trackItemContainer}>
       <TouchableOpacity
@@ -48,9 +50,10 @@ export const RenderItem: FC<{
         }}
       >
         <Image
-          source={require("../assets/images/list-image.jpeg")}
+          source={artworkError ? fallbackImage : { uri: item.artwork }}
           style={[styles.trackImage, { backgroundColor: theme.background }]}
           contentFit="cover"
+          onError={handleImageError}
         />
         <View style={styles.trackInfo}>
           <Text

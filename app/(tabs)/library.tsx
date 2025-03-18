@@ -19,7 +19,7 @@ import { useTheme } from "@/context/ThemeContext";
 
 type LibrarySection = "playlists" | "titres" | "artistes" | "albums";
 
-export default function Library() {
+function LibraryScreen() {
   const [activeSection, setActiveSection] =
     useState<LibrarySection>("playlists");
   const {
@@ -87,7 +87,7 @@ export default function Library() {
           <Image
             source={{ uri: playlist.artwork }}
             style={styles.playlistArtwork}
-            defaultSource={require("@/assets/images/list-image.jpeg")}
+            defaultSource={require("@/assets/images/unknown_track.png")}
           />
         ) : (
           <View
@@ -375,3 +375,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
 });
+
+export default function Library() {
+  return <LibraryScreen />;
+}

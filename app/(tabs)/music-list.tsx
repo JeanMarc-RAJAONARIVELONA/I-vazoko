@@ -12,13 +12,14 @@ import {
 } from "react-native";
 import { useEffect, useState } from "react";
 import { useAudioStore, Track } from "@/store/audioStore";
+import { State, usePlaybackState } from "react-native-track-player";
 import RenderItem from "@/component/RenderItem";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "@/context/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
-export default function MusicScreen() {
+function MusicScreenContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTrack, setSelectedTrack] = useState<Track | null>(null);
   const [showPlaylistModal, setShowPlaylistModal] = useState(false);
@@ -29,11 +30,19 @@ export default function MusicScreen() {
     playlists,
     loadLocalTracks,
     currentTrack,
-    isPlaying,
     loadTrack,
     togglePlayback,
     addToPlaylist,
   } = useAudioStore();
+  
+  const [isPlaying, setIsPlaying] = useState(false);
+  
+  // Use the playback state to determine if music is playing
+  const playbackState = usePlaybackState();
+  
+  useEffect(() => {
+    setIsPlaying(playbackState?.state === State.Playing);
+  }, [playbackState]);
 
   useEffect(() => {
     loadLocalTracks();
@@ -71,7 +80,6 @@ export default function MusicScreen() {
             item={item}
             loadTrack={loadTrack}
             currentTrack={currentTrack}
-            isPlaying={isPlaying}
             togglePlayback={togglePlayback}
             onAddToPlaylist={(track) => {
               setSelectedTrack(track);
@@ -108,7 +116,7 @@ export default function MusicScreen() {
               {selectedTrack && (
                 <View style={styles.selectedTrack}>
                   <ImageBackground
-                    source={require("../../assets/images/list-image.jpeg")}
+                    source={require("../../assets/images/unknown_track.png")}
                     style={styles.selectedTrackImage}
                     imageStyle={{ borderRadius: 10 }}
                   />
@@ -282,3 +290,7 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 0.5)",
   },
 });
+
+export default function MusicScreen() {
+  return <MusicScreenContent />;
+}

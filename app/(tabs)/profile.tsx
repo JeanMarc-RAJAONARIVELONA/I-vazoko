@@ -20,6 +20,7 @@ export default function Profile() {
   const { theme, isDark, toggleTheme } = useTheme();
   const [editName, setEditName] = useState(false);
   const [tempName, setTempName] = useState(name);
+  const { setWelcomeShown } = useUserStore();
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -97,10 +98,7 @@ export default function Profile() {
             )}
           </View>
         </View>
-
-        <View
-          style={[styles.settingsSection, { backgroundColor: theme.cardBg }]}
-        >
+        <View style={[styles.settingsSection, { backgroundColor: theme.cardBg }]}>
           <View style={styles.settingItem}>
             <Text style={[styles.settingLabel, { color: theme.text }]}>
               Mode sombre
@@ -112,6 +110,16 @@ export default function Profile() {
               thumbColor={theme.background}
             />
           </View>
+          
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => setWelcomeShown(true)}
+          >
+            <Text style={[styles.settingLabel, { color: theme.text }]}>
+              Réafficher l'écran de bienvenue
+            </Text>
+            <Ionicons name="refresh" size={24} color={theme.tint} />
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </View>

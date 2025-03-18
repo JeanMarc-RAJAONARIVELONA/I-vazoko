@@ -1,23 +1,23 @@
 import { create } from "zustand";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-interface Track {
+export interface PlaylistTrack {
   id: string;
   title: string;
   artist: string;
   artwork: string;
 }
 
-interface Playlist {
+export interface Playlist {
   id: string;
   name: string;
-  tracks: Track[];
+  tracks: PlaylistTrack[];
 }
 
 interface PlaylistStore {
   playlists: Playlist[];
-  createPlaylist: (name: string, tracks: Track[]) => Promise<void>;
-  updatePlaylist: (id: string, name: string, tracks: Track[]) => Promise<void>;
+  createPlaylist: (name: string, tracks: PlaylistTrack[]) => Promise<void>;
+  updatePlaylist: (id: string, name: string, tracks: PlaylistTrack[]) => Promise<void>;
   deletePlaylist: (id: string) => Promise<void>;
   loadPlaylists: () => Promise<void>;
 }
