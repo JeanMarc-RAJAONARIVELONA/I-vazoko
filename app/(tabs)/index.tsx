@@ -69,7 +69,7 @@ const HomeScreen: React.FC = () => {
       }
 
       // Fetch music assets
-      const assets = await fetchMusicAssets(50);
+      const assets = await fetchMusicAssets(80);
 
       if (assets.length > 0) {
         // Convert assets to tracks

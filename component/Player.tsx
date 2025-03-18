@@ -12,11 +12,12 @@ import Slider from "@react-native-community/slider";
 import { useEffect } from "react";
 import { Track, useAudioStore } from "@/store/audioStore";
 import { useTheme } from "@/context/ThemeContext";
-import { 
+import TrackPlayer,{ 
   State, 
   useProgress, 
   usePlaybackState,
   RepeatMode,
+  Event
 } from "react-native-track-player";
 
 const { width, height } = Dimensions.get("window");
@@ -31,6 +32,7 @@ export default function Player({}: PlayerProps) {
   const { theme } = useTheme();
   const playbackState = usePlaybackState();
   const progress = useProgress();
+  const { currentPlaylist } = useAudioStore();
 
   const {
     currentTrack,
@@ -48,10 +50,37 @@ export default function Player({}: PlayerProps) {
   const isPlaying = playbackState?.state === State.Playing;
 
   useEffect(() => {
-    if (!currentTrack || currentTrack.id !== track?.id) {
-      track && loadTrack(track);
-    }
-  }, [track, currentTrack, loadTrack]);
+    const loadCurrentTrack = async () => {
+        if (!track) return;
+        
+        const playerTrack = await TrackPlayer.getActiveTrack();
+        if (playerTrack?.id === track.id) return;
+
+        if (currentPlaylist) {
+            await loadTrack(track, currentPlaylist.tracks);
+        } else {
+            await loadTrack(track);
+        }
+    };
+
+    const trackListener = TrackPlayer.addEventListener(
+        Event.PlaybackActiveTrackChanged, 
+        async (event) => {
+            const currentTrack = await TrackPlayer.getActiveTrack();
+            if (currentTrack) {
+              // Use setCurrentTrack from useAudioStore instead of set
+              useAudioStore.getState().setCurrentTrack(currentTrack as Track);
+          }
+        }
+    );
+
+    loadCurrentTrack();
+
+    // Clean up event listener when component unmounts
+    return () => {
+        trackListener.remove();
+    };
+}, [track?.id, currentPlaylist]);
 
   const formatTime = (milliseconds: number): string => {
     const totalSeconds = Math.floor(milliseconds / 1000);

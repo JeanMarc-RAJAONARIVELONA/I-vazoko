@@ -35,11 +35,11 @@ export const convertAssetsToTracks = (
 ): Track[] => {
   return assets.map(asset => ({
     id: asset.id,
+    url: asset.uri,
     title: asset.filename ? asset.filename.replace(/\.[^/.]+$/, "") : "Unknown Title",
     artist: asset.artist || 'Unknown Artist',
     album: asset.albumId || 'Unknown Album',
     artwork: asset.artwork || defaultArtwork,
-    url: asset.uri,
     duration: asset.duration || 0,
     creationTime: asset.creationTime,
   }));
